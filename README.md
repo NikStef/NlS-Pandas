@@ -1,116 +1,131 @@
 # Netflix Data Cleaning & Exploration (Pandas)
 
-This project focuses on cleaning and exploring the **Netflix Titles dataset** using **Python and pandas**. The goal is to practice real-world data cleaning techniques, understand common data issues, and apply appropriate solutions.
+This project documents a hands-on data cleaning and exploration workflow using the **Netflix Titles dataset** and **Python (pandas)**. The notebook focuses on understanding real-world data issues and applying appropriate cleaning techniques rather than aggressive data removal.
 
 ---
 
 ## 📁 Dataset
 
-* **Source:** Netflix Titles dataset (CSV)
-* **Rows:** ~6,000+
-* **Columns:** 12
-* **Content types:** Movies and TV Shows
+* **Source:** Netflix Titles CSV dataset
+* **Size:** ~6,000+ rows, 12 columns
+* **Content:** Movies and TV Shows
+
+---
+
+## 🔍 Initial Exploration
+
+* Loaded the dataset with `pd.read_csv()`
+* Inspected structure and schema using:
+
+  * `head()`
+  * `dtypes`
+  * `shape`
+  * `info()`
 
 ---
 
 ## 🧹 Data Cleaning Steps
 
-### 1. Initial Inspection
+### 1️⃣ Duplicate Handling
 
-* Loaded the dataset using `pandas.read_csv()`
-* Checked structure with:
+* Duplicates were removed using:
 
-  * `head()`
-  * `info()`
-  * `shape`
-  * `dtypes`
+```python
+df = df.drop_duplicates()
+```
 
----
 
-### 2. Duplicate Removal
+### 2️⃣ Missing Values Analysis
 
-* Removed duplicate rows using:
+* Checked missing values per column:
 
-  ```python
-  df = df.drop_duplicates()
-  ```
+```python
+df.isnull().sum().sort_values(ascending=False)
+```
 
----
 
-### 3. Missing Values Analysis
+### 3️⃣ Handling Missing Categorical Data
 
-* Identified missing values per column:
+#### `director`
 
-  ```python
-  df.isnull().sum()
-  ```
-* Calculated percentage of missing values per column
+* Explored multiple approaches:
+
+  * Dropping the column
+  * Dropping rows where `director` is missing
+  * Filtering rows using boolean logic (`~isnull()`)
 
 ---
 
-### 4. Handling Categorical Missing Data
+### 4️⃣ Filling Missing Ratings (Categorical)
 
-#### Ratings
+* Identified missing values in `rating`
+* Filled missing values using the **mode** (most frequent value)
 
-* Filled missing `rating` values using the **mode** (most frequent value)
-* Used pandas nullable integer/string-safe methods to avoid chained assignment issues
+Two approaches were demonstrated:
 
-#### Director / Cast / Country
-
-* Analyzed missingness
-* Decided whether to keep, drop, or leave missing values depending on analytical relevance
-
----
-
-### 5. Duration Cleaning (Movies)
-
-* Filtered only movie records:
-
-  ```python
-  df_movies = df[df['type'] == 'Movie']
-  ```
-
-* Extracted numeric duration (minutes) from strings like `"90 min"`
-
-* Used regex to safely extract numbers:
-
-  ```python
-  df_movies['duration_minutes'] = (
-      df_movies['duration']
-      .str.extract(r'(\d+)')
-      .astype('Int64')
-  )
-  ```
-
-* Learned why `Int64` works better than `int` when missing values are present
+```python
+mode1 = ''.join(df['rating'].mode())
+mode2 = df['rating'].mode().iloc[0]
+```
+```python
+df['rating'] = df['rating'].fillna(mode1)
+```
 
 ---
 
-### 6. Date Cleaning (`date_added`)
+### 5️⃣ Understanding Mean vs Median vs Mode
 
-* Split and extracted the **year** from the `date_added` column:
-
-  ```python
-  df_movies['year_added'] = df_movies['date_added'].str.extract('(\d{4})')
-  ```
-
-* Demonstrated both `split()` and `extract()` approaches
-
-* Preferred regex for robustness
+* **Mean**: numeric data without strong outliers
+* **Median**: numeric, skewed data with outliers
+* **Mode**: categorical or discrete data (used for `rating`)
 
 ---
 
-## 🧠 Key Concepts Learned
+### 6️⃣ Duration Cleaning and Type Conversion
 
-* Difference between `int` and pandas nullable `Int64`
-* How transformations can introduce missing values
-* Why `inplace=True` is discouraged in modern pandas
-* When to use:
+* Filled missing `duration` values with `'0'` **as a string** to allow string operations:
 
-  * **mean / median** → numeric data
-  * **mode** → categorical data
-  * **ffill / bfill** → ordered or time-series data
-* Importance of assigning results back to the DataFrame
+```python
+df['duration'] = df['duration'].fillna('0')
+```
+
+```python
+df_movies = df[df['type'] == 'Movie']
+```
+
+* Extracted movie duration in minutes:
+
+```python
+df_movies['minute'] = (
+    df_movies['duration']
+    .str.split(expand=True)[0]
+    .astype(int)
+)
+```
+---
+
+### 7️⃣ Forward Fill & Backward Fill
+
+* Discussed modern pandas behavior:
+* Demonstrated backward fill for learning purposes
+
+---
+
+### 8️⃣ Date Cleaning (`date_added`)
+
+* Extracted year information using two methods:
+
+```python
+df_movies['date_added'].str.split(',', expand=True)[1]
+```
+
+```python
+df_movies['date_added'].str.extract('(\\d{4})')
+```
+
+* Regex extraction was preferred for robustness
+
+---
 
 ---
 
@@ -119,13 +134,11 @@ This project focuses on cleaning and exploring the **Netflix Titles dataset** us
 * Python 3
 * pandas
 * NumPy
-* VS Code / Jupyter Notebook
+* Jupyter Notebook / VS Code
 * Git & GitHub
 
 ---
 
 ## 📌 Conclusion
 
-This project demonstrates practical data cleaning workflows using pandas, highlights common pitfalls in real datasets, and reinforces best practices for handling missing, categorical, and messy string-based data.
-
-It serves as a foundational exercise in preparing data for analysis or modeling.
+This notebook demonstrates a realistic data cleaning workflow using pandas, emphasizing understanding data behavior, debugging common issues, and applying best practices rather than blindly applying transformations. It serves as a solid foundation for further analysis or modeling.
